@@ -41,16 +41,41 @@ class Recipe(models.Model):
     text = models.CharField(max_length=128, blank=False)
     ingredient = models.OneToOneField(
         Ingredient,
-        blank=False,
+        blank=False,        
         related_name='ingredients',
         on_delete=models.CASCADE
     )
     tag = models.ManyToManyField(
         Tag,
         blank=False,
-        related_name='tags'
+        through='tags'
     )
     time_to_cooking = models.IntegerField()
+    favourite = models.ManyToManyField(
+        User,
+        related_name='recipe_favourite',
+        blank=True
+    )
 
     def __str__(self) -> str:
-        return self.text
+        return self.name
+
+
+class UserFollowing(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'following_user_id'], name='unique_follow'
+            )
+        ]
+    user_id = models.ForeignKey(
+        User,
+        related_name='following',
+        on_delete=models.CASCADE
+    )
+    following_user_id = models.ForeignKey(
+        User,
+        related_name='followers',
+        on_delete=models.CASCADE
+    )
+    created = models.DateTimeField(auto_now_add=True)
