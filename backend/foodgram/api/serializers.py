@@ -31,7 +31,7 @@ class RecipesSerializers(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username', read_only=True
     )
-    
+
     class Meta:
         model = Recipe
         fields = (
@@ -48,7 +48,7 @@ class RecipesSerializers(serializers.ModelSerializer):
 class TagSerializers(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('')
+        fields = ('name', 'slug', 'color')
 
 
 class IngredientSerializers(serializers.ModelSerializer):
@@ -99,4 +99,3 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save
 
         return user
-    

@@ -3,12 +3,17 @@ from recipes.models import Recipe
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import MyTokenObtainPairSerializer, RecipesSerializers
+from .serializers import (
+    MyTokenObtainPairSerializer,
+    RecipesSerializers,
+    TagSerializers
+)
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import viewsets
-from recipes.models import Recipe
-
+from rest_framework import generics
+from recipes.models import Tag
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class FavouriteRecipeView(APIView):
@@ -48,3 +53,30 @@ class MyTokenObtainPair(TokenObtainPairView):
 class RecipeViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipesSerializers
+
+
+class TagList(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializers
+
+
+class TagRetrieve(generics.RetrieveAPIView):
+    queryset = Tag.objects.all(id=id)
+    serializer_class = TagSerializers
+
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data['refresh_token']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                status=status.HTTP_401_UNAUTHORIZED,
+                content_type=e
+            )
