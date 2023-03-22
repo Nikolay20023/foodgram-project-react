@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'api',
     'recipes',
     'users',
-    'djangorestframework',  
+    'djangorestframework',
+    'rest_framework',
+    'rest_framework_simple_jwt.token_blacklist', 
 ]
 
 MIDDLEWARE = [

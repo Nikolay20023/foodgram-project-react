@@ -3,9 +3,12 @@ from recipes.models import Recipe
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import MyTokenObtainPairSerializer
+from .serializers import MyTokenObtainPairSerializer, RecipesSerializers
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
+from rest_framework import viewsets
+from recipes.models import Recipe
+
 
 
 class FavouriteRecipeView(APIView):
@@ -40,3 +43,8 @@ class FavouriteRecipeView(APIView):
 class MyTokenObtainPair(TokenObtainPairView):
     permission_classes = (AllowAny, )
     serializer_class = MyTokenObtainPairSerializer
+
+
+class RecipeViewset(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipesSerializers
