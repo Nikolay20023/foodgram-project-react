@@ -18,7 +18,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value()
 
 
-class RecipesSerializers(serializers.ModelSerializer):
+class RecipesSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username', read_only=True
     )
@@ -36,13 +36,13 @@ class RecipesSerializers(serializers.ModelSerializer):
         )
 
 
-class TagSerializers(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('name', 'slug', 'color')
 
 
-class IngredientSerializers(serializers.ModelSerializer):
+class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-        fields = ()
+        fields = ('name', 'units')

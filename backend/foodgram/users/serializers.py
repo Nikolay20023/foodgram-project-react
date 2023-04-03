@@ -1,81 +1,92 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.validators import UniqueValidator
-from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth.hashers import make_password
+from .models import Follow
+from rest_framework.validators import UniqueTogetherValidator
 
 
 User = get_user_model()
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-
-    email = serializers.EmailField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-    username = serializers.CharField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-    password = serializers.CharField(
-        required=True,
-        write_only=True,
-        validators=[validate_password]
-    )
+class CurrentSertializer(serializers.ModelSerializer):
+    is_subscrited = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
-
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
+        fields = (
+            'id',
+            'email',
+            'username',
+            'is_subscrited'
+            'first_name',
+            'last_name',
+            'password',
         )
 
-        user.set_password(validated_data['password'])
-        make_password(validated_data['password'])
-        user.save
+    def get_is_subcribed(self, obj):
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        user = request.user
+        return Follow.objects.filter(
+            user_id=user,
+            following_user_id=obj
+        ).exists()
 
-        return user
 
+class UserFollowSerializer(serializers.ModelSerializer):
 
-class ChabgePasswordSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password]
+    following = serializers.SlugRelatedField(
+        slug_field='id',
+        queryset=User.objects.all()
     )
-    password_current = serializers.CharField(
-        write_only=True, required=True,
+    user = serializers.SlugRelatedField(
+        slug_field='id',
+        queryset=User.objects.all(),
+        default=serializers.CurrentUserDefault
     )
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password_current']:
-            raise serializers.ValidationError(
-                {'password': 'Пароли не совпадают'}
+    class Meta:
+        model = Follow
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=('user', 'following'),
+                message='Такая подписка уже существует'
             )
-        return attrs
-
-    def update(self, instance, validated_data):
-        instance.set_password(validated_data['password'])
-        instance.save()
-        return instance
-
-
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
-    @classmethod
-    def get_token(cls, user):
-        token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-
-        token['username'] = user.username
-        return token
+        ]
+    
+    def validate(self, data):
+        if (data['user'] == data['following']
+                and self.context['request'].method == 'POST'):
+            raise serializers.ValidationError(
+                'Нельязя оформитб подписку на самого себя'
+            )
+        return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class FollowListSerializer(serializers.ModelSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+        fields = (
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'recipes', 'recipes_count'
+        )
+    
+    def get_is_subscribed(self, user):
+        current_user = self.context.get('current_user')
+        other_user = user.following.all()
+        if user.is_anonymous:
+            return False
+        if other_user.count() == 0:
+            return False
+        if Follow.objects.filter(user=user, folllowing=current_user).exists():
+            return True
+        return False
+    
+    def get_recipes(self, obj):
+        pass

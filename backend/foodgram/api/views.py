@@ -1,28 +1,25 @@
 from rest_framework.views import APIView
-from recipes.models import Recipe, Favourite
+from recipes.models import (
+    Recipe,
+    Favourite,
+    Ingredient,
+)
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
-    RecipesSerializers,
-    TagSerializers,
+    RecipesSerializer,
+    TagSerializer,
+    IngredientSerializer
 )
-from users.serializers import (
-    MyTokenObtainPairSerializer,
-    ChabgePasswordSerializer,
-    RegisterSerializer,
-    UserSerializer
-)
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
-from rest_framework import generics
 from recipes.models import Tag
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.models import User
 
 
 class FavouriteRecipeView(APIView):
+    permission_classes = [IsAuthenticated, ]
 
     def post(self, request):
         recipe = get_object_or_404(Recipe, id=request.data.get('id'))
@@ -54,30 +51,22 @@ class FavouriteRecipeView(APIView):
         )
 
 
-class MyTokenObtainPair(TokenObtainPairView):
-    permission_classes = (AllowAny, )
-    serializer_class = MyTokenObtainPairSerializer
-
-
 class RecipeViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipesSerializers
+    serializer_class = RecipesSerializer
     permission_classes = (IsAuthenticated,)
 
 
-class TagList(generics.ListCreateAPIView):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
-    serializer_class = TagSerializers
+    serializer_class = TagSerializer
+    permission_classes = (IsAuthenticated)
 
 
-class UsersList(generics.ListCreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class TagRetrieve(generics.RetrieveAPIView):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializers
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = (IsAuthenticated, )
 
 
 class LogoutView(APIView):
@@ -95,19 +84,3 @@ class LogoutView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
                 content_type=e
             )
-
-
-class ChangePasswordView(generics.UpdateAPIView):
-
-    queryset = User.objects.all()
-    serializer_class = ChabgePasswordSerializer
-    permission_classes = (IsAuthenticated, )
-
-
-class RegisterView(
-    generics.CreateAPIView,
-    generics.ListCreateAPIView
-):
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = RegisterSerializer

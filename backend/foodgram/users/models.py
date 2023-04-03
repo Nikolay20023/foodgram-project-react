@@ -3,51 +3,44 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
+    email = models.EmailField(max_length=128, unique=True, null=False)
 
-    GUEST = 'guest'
-    AUTHORIZED = 'authorized_user'
-    ADMIN = 'admin'
+    REQUIRED_FIELDS = [
+        'username',
+        'first_name',
+        'last_name'
+    ]
+    USERNAME_FIELD = 'email'
 
-    USER_ROLE = (
-        (GUEST, 'guest'),
-        (AUTHORIZED, 'authorized_user'),
-        (ADMIN, 'admin')
-    )
-    role = models.CharField(
-        'Роль',
-        max_length=30,
-        choices=USER_ROLE,
-        default=GUEST
-    )
+    class Meta:
+        verbose_name = 'Пользователь'
+        ordering = ['id']
 
     def __str__(self):
         return self.username
 
-    @property
-    def is_admin(self):
-        return (
-            self.role == User.ADMIN
-            or self.is_superuser
-        )
 
-
-class UserFollowing(models.Model):
+class Follow(models.Model):
     class Meta:
+        verbose_name = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user_id', 'following_user_id'], name='unique_follow'
+                fields=['user', 'following'], name='unique_follow'
             )
         ]
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='following',
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
     )
-    following_user_id = models.ForeignKey(
+    following = models.ForeignKey(
         User,
         related_name='followers',
         on_delete=models.CASCADE,
         verbose_name='Подписчик пользлователя'
     )
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user} follows {self.following}'
