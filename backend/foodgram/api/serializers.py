@@ -2,7 +2,12 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 import base64
 from django.core.files.base import ContentFile
-from recipes.models import Recipe, Tag, Ingredient
+from recipes.models import (
+    Recipe,
+    Tag,
+    Ingredient,
+    RecipeIngredient
+)
 
 
 User = get_user_model()
@@ -18,31 +23,29 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value()
 
 
-class RecipesSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        slug_field='username', read_only=True
-    )
-
+class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = (
-            'author',
-            'name',
-            'image',
-            'text',
-            'ingredient',
-            'cooking_time',
-            'tag'
-        )
+        fields = '__all__'
+
+
+class IngredientSerialier(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = '__all__'
+
+
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    ingredient = serializers.StringRelatedField(many=True)
+    recipe = serializers.StringRelatedField(many=True)
+
+    class Meta:
+        model = RecipeIngredient
+        fields = '__all__'
 
 
 class TagSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Tag
-        fields = ('name', 'slug', 'color')
-
-
-class IngredientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ingredient
-        fields = ('name', 'units')
+        fields = '__all__'

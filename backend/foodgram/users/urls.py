@@ -1,10 +1,21 @@
 from django.urls import path, include
-from .views import FollowApiView, FollowListApiView
+from .views import CustomUserViewSet
+from rest_framework import routers
 
+router = routers.DefaultRouter()
+router.register(r'users', CustomUserViewSet)
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
     path('', include('djoser.urls')),
-    path('users/subscriptions/', FollowListApiView.as_view()),
-    path('users/<int:following_id>/subscribe', FollowApiView.as_view())
+    path('users/subscriptions/', CustomUserViewSet.as_view(
+        {'get': 'subscriptions'}
+    )),
+    path(
+        'users/<int:id>/subscribe',
+        CustomUserViewSet.as_view({
+            'post': 'subscribe',
+            'delete': 'unsubscribe'
+        })
+    )
 ]

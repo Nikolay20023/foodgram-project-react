@@ -55,7 +55,7 @@ class UserFollowSerializer(serializers.ModelSerializer):
                 message='Такая подписка уже существует'
             )
         ]
-    
+
     def validate(self, data):
         if (data['user'] == data['following']
                 and self.context['request'].method == 'POST'):
@@ -76,17 +76,3 @@ class FollowListSerializer(serializers.ModelSerializer):
             'email', 'id', 'username', 'first_name',
             'last_name', 'recipes', 'recipes_count'
         )
-    
-    def get_is_subscribed(self, user):
-        current_user = self.context.get('current_user')
-        other_user = user.following.all()
-        if user.is_anonymous:
-            return False
-        if other_user.count() == 0:
-            return False
-        if Follow.objects.filter(user=user, folllowing=current_user).exists():
-            return True
-        return False
-    
-    def get_recipes(self, obj):
-        pass

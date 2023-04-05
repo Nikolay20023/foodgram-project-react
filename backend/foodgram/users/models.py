@@ -30,13 +30,13 @@ class Follow(models.Model):
         ]
     user = models.ForeignKey(
         User,
-        related_name='following',
+        related_name='follower',
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
     )
     following = models.ForeignKey(
         User,
-        related_name='followers',
+        related_name='following',
         on_delete=models.CASCADE,
         verbose_name='Подписчик пользлователя'
     )

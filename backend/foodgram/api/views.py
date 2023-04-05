@@ -8,14 +8,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
-    RecipesSerializer,
+    RecipeSerializer,
     TagSerializer,
-    IngredientSerializer
+    IngredientSerialier,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from recipes.models import Tag
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class FavouriteRecipeView(APIView):
@@ -53,7 +52,7 @@ class FavouriteRecipeView(APIView):
 
 class RecipeViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipesSerializer
+    serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticated,)
 
 
@@ -65,22 +64,5 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
+    serializer_class = IngredientSerialier
     permission_classes = (IsAuthenticated, )
-
-
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        try:
-            refresh_token = request.data['refresh_token']
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response(
-                status=status.HTTP_401_UNAUTHORIZED,
-                content_type=e
-            )

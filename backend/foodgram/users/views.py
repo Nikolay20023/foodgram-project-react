@@ -1,69 +1,65 @@
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status
 from django.shortcuts import get_object_or_404
 from users.serializers import (
-    FollowListSerializer,
     UserFollowSerializer,
     CurrentSertializer
 )
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from users.models import User, Follow
 from rest_framework.decorators import action
+from djoser.views import UserViewSet
+from rest_framework.pagination import PageNumberPagination
 
 
-class UserViewSwet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = CurrentSertializer
-    permission_classes = [AllowAny, ]
+class CustomUserViewSet(UserViewSet):
+    pagination_class = PageNumberPagination
+
+    @action(
+        detail=True,
+        methods=['GET'],
+        permission_classes=[IsAuthenticated]
+    )
+    def me(self, request):
+        serializer = CurrentSertializer(self.request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         detail=False,
-        methods=['get'],
-        permission_classes=(IsAuthenticated)
+        methods=['POST'],
+        permission_classes=[IsAuthenticated]
     )
-    def me(self, request):
-        serializer = self.get_serializer(self.request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class FollowApiView(APIView):
-    permission_classes = [IsAuthenticated, ]
-
-    def get(self, request, following_id):
+    def subscribe(self, request, id=None):
         user = request.user
         data = {
-            'following': following_id,
+            'following': id,
             'user': user.id
         }
-        serializer = UserFollowSerializer(data=data,
+        serializer = UserFollowSerializer(data, 
                                           context={'request': request})
-        
         if not serializer.is_valid():
             return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def delete(self, request, following_id):
+
+    @action(
+        detail=True,
+        methods=['DELETE'],
+        permission_classes=[IsAuthenticated]
+    )
+    def unsubscribe(self, request, id=None):
         user = request.user
-        following = get_object_or_404(User, id=following_id)
+        following = get_object_or_404(User, id=id)
         Follow.objects.filter(user=user, following=following).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class FollowListApiView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated, ]
-    serializer_class = FollowListSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({'request': self.request})
-        return context
-
-    def get_queryset(self):
-        user = self.request.user
-        return User.objects.filter(following__user=user)
+    @action(
+        detail=False,
+        methods=['GET'],
+        permission_classes=[IsAuthenticated]
+    )
+    def subscriptions(self, request):
+        user = request.user
+        return User.objects.filter(folowing__user=user)

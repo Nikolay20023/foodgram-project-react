@@ -86,7 +86,12 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления',
-        validators=[MinValueValidator(1)]
+        validators=[
+            MinValueValidator(
+                1,
+                message='Минимальное время приготовление 1 минута'
+            )
+        ]
     )
 
     def __str__(self) -> str:
@@ -122,21 +127,30 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент_в_рецепте'
         verbose_name_plural = 'Ингредиенты_в_рецепте'
+        constraints = [
+            models.UniqueConstraint(fields=('ingredient', 'recipe'),
+                                    name='unique_recipes_ingredient')
+        ]
 
     amount = models.PositiveIntegerField(
-        verbose_name='Количество'
+        verbose_name='Количество',
+        validators=(
+            MinValueValidator(
+                1, message='Минимальное количество ингредиентов 1'
+            ),
+        )
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингредиенты',
-
-
+        related_name='ingredient_recipes'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        related_name='recipe_ingredients'
     )
 
     def __str__(self) -> str:
@@ -147,6 +161,10 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        constraints = [
+            models.UniqueConstraint(fields=('user', 'recipe'),
+                                    name='unique_cart_user')
+        ]
 
     user = models.ForeignKey(
         User,
