@@ -3,7 +3,8 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from users.serializers import (
     UserFollowSerializer,
-    CurrentSertializer
+    CurrentSertializer,
+    FollowListSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from users.models import User, Follow
@@ -35,7 +36,20 @@ class CustomUserViewSet(UserViewSet):
             'following': id,
             'user': user.id
         }
-        serializer = UserFollowSerializer(data, 
+        following = get_object_or_404(User, id=id)
+        if user == following:
+            return Response(
+                {'errors': 'Вы не можете подписаться на самого себя '},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if Follow.objects.filter(user=user, following=following).exists():
+            return Response(
+                {'errors': 'Подписка уже создана'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = UserFollowSerializer(data=data,
                                           context={'request': request})
         if not serializer.is_valid():
             return Response(
@@ -62,4 +76,11 @@ class CustomUserViewSet(UserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        return User.objects.filter(folowing__user=user)
+        queryset = Follow.objects.filter(user=user)
+        pages = self.paginate_queryset(queryset)
+        serilaizer = FollowListSerializer(
+            pages,
+            many=True,
+            context={'request': request}
+        )
+        return self.get_paginated_response(serilaizer.data)

@@ -12,7 +12,7 @@ from .serializers import (
     TagSerializer,
     IngredientSerialier,
 )
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
 from recipes.models import Tag
 
@@ -53,16 +53,16 @@ class FavouriteRecipeView(APIView):
 class RecipeViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [AllowAny, ]
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsAuthenticated)
+    permission_classes = [AllowAny, ]
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerialier
-    permission_classes = (IsAuthenticated, )
+    permission_classes = [AllowAny, ]

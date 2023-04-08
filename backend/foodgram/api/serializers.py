@@ -24,6 +24,9 @@ class Base64ImageField(serializers.ImageField):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
+    tag = serializers.StringRelatedField(many=True)
+    ingredient = serializers.StringRelatedField(many=True)
+
     class Meta:
         model = Recipe
         fields = '__all__'

@@ -15,7 +15,14 @@ urlpatterns = [
         'users/<int:id>/subscribe',
         CustomUserViewSet.as_view({
             'post': 'subscribe',
-            'delete': 'unsubscribe'
         })
+    ),
+    path(
+        'users/<int:id>/unsubscribe',
+        CustomUserViewSet.as_view(
+            {
+                'delete': 'unsubscribe',
+            }
+        )
     )
 ]
