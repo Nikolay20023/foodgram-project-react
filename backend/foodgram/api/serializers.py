@@ -6,8 +6,11 @@ from recipes.models import (
     Recipe,
     Tag,
     Ingredient,
-    RecipeIngredient
+    RecipeIngredient,
+    ShoppingCart,
+    Favourite
 )
+from rest_framework.validators import UniqueTogetherValidator
 
 
 User = get_user_model()
@@ -52,3 +55,24 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = '__all__'
+
+
+class ShoppingSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShoppingCart
+        fields = '__all__'
+
+
+class FavouriteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Favourite
+        fields = ('user', 'recipe')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favourite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в избранное'
+            )
+        ]

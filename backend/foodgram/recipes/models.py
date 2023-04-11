@@ -174,7 +174,7 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецпты',
+        verbose_name='Рецепты',
     )
 
     def __str__(self) -> str:
