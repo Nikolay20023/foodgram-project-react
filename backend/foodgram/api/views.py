@@ -13,17 +13,29 @@ from .serializers import (
     ShoppingSerializer,
     FavouriteSerializer,
 )
+from .permissions import IsOWnerOrReadOnly
 from django.shortcuts import HttpResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
 from recipes.models import Tag, ShoppingCart
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import PermissionDenied
 
 
-class RecipeViewset(viewsets.ModelViewSet):
+class RecipeReadViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = [AllowAny, ]
+    permission_classes = [IsOWnerOrReadOnly, ]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+
+        if instance.author != user:
+            raise PermissionDenied("Вы не имеете таких полномочий.")
+        instance.delete()
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
