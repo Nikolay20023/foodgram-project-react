@@ -11,7 +11,7 @@ from .serializers import (
     TagSerializer,
     IngredientSerialier,
     ShoppingSerializer,
-    FavouriteSerializer
+    FavouriteSerializer,
 )
 from django.shortcuts import HttpResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
