@@ -2,16 +2,59 @@ version: '3.3'
 services:
 
   frontend:
+    container_name: front
     build:
       context: ../frontend
       dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
+    
+  db:
+    container_name: db
+    image: postgres:13.0-alpine
+    restart: always
+    volumes:
+      - /var/lib/postgresql/data/
+    env_file:
+      - ./.env
+
+  backend:
+    container_name: app
+    # image: nikolay20023/foodgram_back:latest
+    build:
+      context: ../backend/foodgram
+      dockerfile: Dockerfile
+    restart: always
+    command: >
+      bash -c "python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      python manage.py loaddata a.json  &&
+      gunicorn --bind 0:8000 foodgram.wsgi"
+    volumes:
+      - static_dir:/app/static/
+      - media_dir:/app/media/
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+  
   nginx:
+    container_name: proxy
     image: nginx:1.19.3
+    restart: always
     ports:
-      - "80:80"
+      - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - static_dir:/app/backend_static/
+      - media_dir:/app/backend_media/
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  static_dir:
+  media_dir:
+  postgres_data:
