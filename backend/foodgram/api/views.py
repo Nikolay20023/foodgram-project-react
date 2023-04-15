@@ -2,6 +2,7 @@ from recipes.models import (
     Recipe,
     Favourite,
     Ingredient,
+    RecipeIngredient
 )
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -20,6 +21,7 @@ from rest_framework import viewsets
 from recipes.models import Tag, ShoppingCart
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
+from django.db.models import Sum
 
 
 class RecipeViewset(viewsets.ModelViewSet):
@@ -85,27 +87,21 @@ class ShhoopingViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def list(self, request, *args, **kwargs):
-        shopping_list = {}
         user = request.user
         if not ShoppingCart.objects.filter(user=user).exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        ingredients = ShoppingCart.objects.filter(user=user).values_list(
-            'recipe__recipe_ingredients__ingredient__name',
-            'recipe__recipe_ingredients__amount',
-            'recipe__recipe_ingredients__ingredient__units')
-        for ingredient in ingredients:
-            if ingredient[0] in shopping_list.keys():
-                shopping_list[ingredient[0]]['amount'] += ingredient[1]
-            else:
-                shopping_list[ingredient[0]] = {
-                    'amount': ingredient[1],
-                    'units':  ingredient[2]
-                }
-
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__cart__user=request.user
+        ).values(
+            'ingredient__name', 'ingredient__units'
+        ).order_by(
+            'ingredient__name'
+        ).annotate(amount_sum=Sum('amount'))
         main_list = ([
-            f"{item}: {value['amount']}"
-            f"{value['units']}\n"
-            for item, value in shopping_list.items()
+            f"{ingredient['ingredient__name']}: "
+            f"{ingredient['amount_sum']} "
+            f"{ingredient['ingredient__units']}\n"
+            for ingredient in ingredients
         ])
         response = HttpResponse(main_list, 'Content-Type: text/plain')
         response['Content-Disposition'] = 'attachment; filename="BuyList.txt'
