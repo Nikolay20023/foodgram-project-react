@@ -1,4 +1,4 @@
-![example workflow](https://github.com/nikolay20023/foodgram-project-react/actions/workflows/workflow.yml/badge.svg)
+![Foodgram project](https://github.com/nikolay20023/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
 # Описание проекта:
 Foodgram это ресурс для публикации рецептов.
