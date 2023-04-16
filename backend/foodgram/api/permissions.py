@@ -21,7 +21,7 @@ class AuthenticatedOrReadOnly(BanPermission):
 
     def has_permission(self, request, view):
         return (
-            request.method in SAFE_METHODS 
+            request.method in SAFE_METHODS
             or request.user.is_authenticated
         )
 

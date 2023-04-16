@@ -42,7 +42,7 @@ class CustomUserViewSet(UserViewSet):
                 {'errors': 'Вы не можете подписаться на самого себя '},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         if Follow.objects.filter(user=user, following=following).exists():
             return Response(
                 {'errors': 'Подписка уже создана'},
