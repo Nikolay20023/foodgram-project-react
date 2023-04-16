@@ -20,7 +20,7 @@ services:
 
   backend:
     container_name: app
-    # image: nikolay20023/foodgram_back:latest
+    image: nikolay20023/gates:latest
     build:
       context: ../backend/foodgram
       dockerfile: Dockerfile
