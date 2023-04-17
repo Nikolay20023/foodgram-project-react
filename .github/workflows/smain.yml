@@ -13,9 +13,9 @@ jobs:
         uses: garygrossgarten/github-action-ssh@release
         with: 
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME}}
-          passphrase: ${{ secrets.PASSPHRASE }}
-          privateKey: ${{ secrets.PRIVATE_KEY }}
+          username: ${{ secrets.USER}}
+          passphrase: ${{ secrets.PASSPHRASE}}
+          privateKey: ${{ secrets.PRIVATE_KEY}}
           command: cd projects && mkdir -p foodgram && mkdir -p foodgram/docs
 
   tests:
