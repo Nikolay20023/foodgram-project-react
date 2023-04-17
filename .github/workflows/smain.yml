@@ -14,8 +14,8 @@ jobs:
         with: 
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME}}
-          privateKey: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
+          privateKey: ${{ secrets.PRIVATE_KEY }}
           command: cd projects && mkdir -p foodgram && mkdir -p foodgram/docs
 
   tests:
