@@ -12,13 +12,11 @@ jobs:
       - name: Create project directory
         uses: appleboy/ssh-action@master
         with: 
+          command: scp -r ./infra ${{ secrets.USER}}@${{ secrets.HOST }}:/projects
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER}}
           key: ${{ secrets.PRIVATE_KEY}}
           passphrase: ${{ secrets.PASSPHRASE}}
-          script: |
-            cd projects
-            put -r ./infra/
 
   tests:
     runs-on: ubuntu-latest
