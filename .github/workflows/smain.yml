@@ -12,7 +12,7 @@ jobs:
       - name: Create project directory
         uses: appleboy/ssh-action@master
         with: 
-          command: scp -r ./infra ${{ secrets.USER}}@${{ secrets.HOST }}:/projects
+          command: rsync -az --delete ./infra/ ${{ secrets.USER}}@${{ secrets.HOST }}:/projects
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER}}
           key: ${{ secrets.PRIVATE_KEY}}
