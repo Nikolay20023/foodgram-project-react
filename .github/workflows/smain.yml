@@ -92,10 +92,9 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY}}
           passphrase: ${{ secrets.PASSPHRASE}}
           scripts: |
-            cd projects/infra/
-            rm -f .env
-            touch .env 
-
+            sudo docker-compose stop
+            sudo docker-compose rm backend
+            touch .env
             echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
             echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
             echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
@@ -104,11 +103,4 @@ jobs:
             echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
             echo DB_HOST=${{ secrets.DB_HOST }} >> .env
             echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-            echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS}} >> .env
-
-            sudo docker-compose stop
-            sudo docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs sudo docker rm
-            sudo docker rmi ${{ secrets.DOCKER_USERNAME }}/foodgram_front:latest
-            sudo docker rmi ${{ secrets.DOCKER_USERNAME }}/foodgram: latest
             sudo docker-compose up -d
-            sudo docker image prune -a
