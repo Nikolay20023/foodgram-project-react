@@ -3,9 +3,7 @@ services:
 
   frontend:
     container_name: front
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: nikolay20023/foodgram_front:latest
     volumes:
       - ../frontend/:/app/result_build/
     
@@ -20,10 +18,7 @@ services:
 
   backend:
     container_name: app
-    # image: nikolay20023/foodgram:latest
-    build: 
-      context: ../backend/foodgram
-      dockerfile: Dockerfile
+    image: nikolay20023/foodgram:latest
     restart: always
     command: >
       bash -c "python manage.py migrate &&
@@ -45,8 +40,8 @@ services:
       - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
+      - ./frontend/build:/usr/share/nginx/html/
+      - ./docs/:/usr/share/nginx/html/api/docs/
       - static_value:/var/html/backend_static/
       - media_value:/var/html/backend_media/
     depends_on:
