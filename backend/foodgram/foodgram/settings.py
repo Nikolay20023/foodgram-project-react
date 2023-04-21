@@ -34,7 +34,10 @@ ALLOWED_HOSTS = [
     '51.250.94.231',
     '127.0.0.1',
     'localhost',
-    'sudakovnv.ddns.net'
+    '[::1]',
+    'sudakovnv.ddns.net',
+    'backend'
+
 ]
 
 # Application definition
