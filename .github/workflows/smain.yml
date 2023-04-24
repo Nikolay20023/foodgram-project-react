@@ -93,10 +93,9 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE}}
           scripts: |
             cd infra/
-            rm -f .env
-            touch .env 
             sudo docker-compose stop
-            sudo docker-compose rm app
+            sudo rm .env 
+            touch .env
             echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
             echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
             echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
