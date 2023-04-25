@@ -12,17 +12,18 @@ class Tag(models.Model):
 
     name = models.CharField(
         max_length=128,
-        verbose_name='Имя тега',
+        verbose_name='Название',
         unique=True
     )
     slug = models.SlugField(
         max_length=128,
         unique=True,
-        verbose_name='Слаг',
+        verbose_name='slug тега',
     )
     color = models.CharField(
-        max_length=16,
-        verbose_name='Цвет 000x'
+        max_length=7,
+        verbose_name='HEX-код',
+        default='#FF0000'
     )
 
     def __str__(self) -> str:
@@ -37,7 +38,7 @@ class Ingredient(models.Model):
 
     name = models.CharField(
         max_length=64,
-        verbose_name='Имя'
+        verbose_name='Название'
     )
     units = models.CharField(
         max_length=16,
@@ -75,19 +76,19 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
         auto_now_add=True,
     )
-    ingredient = models.ManyToManyField(
+    ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
         through_fields=('recipe', 'ingredient'),
         verbose_name='Ингредиенты'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
         blank=False,
         verbose_name='Теги'
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления',
+        verbose_name='Время приготовления, ',
         validators=[
             MinValueValidator(
                 1,
@@ -97,7 +98,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ("-name", )
+        ordering = ['-id']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 

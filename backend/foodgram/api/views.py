@@ -14,7 +14,7 @@ from .serializers import (
     ShoppingSerializer,
     FavouriteSerializer,
 )
-from .permissions import IsOWnerOrReadOnly
+from .permissions import IsOWnerOrReadOnly, AdminOrReadOnly
 from django.shortcuts import HttpResponse
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
@@ -22,12 +22,47 @@ from recipes.models import Tag, ShoppingCart
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Sum
+from django_filters.rest_framework import DjangoFilterBackend
+from urllib.parse import unquote
+from core.enums import UrlQueries, Tuples
+from core.services import incorrect_layout
 
 
 class RecipeViewset(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.select_related('author')
     serializer_class = RecipeSerializer
     permission_classes = [IsOWnerOrReadOnly, ]
+
+    def get_queryset(self):
+        queryset = self.queryset
+        tags: list = self.request.query_params.getlist(UrlQueries.TAGS.value)
+        if tags:
+            queryset = queryset.filter(
+                tags__slug__in=tags
+            )
+        author: str = self.request.query_params.get(UrlQueries.AUTHOR.value)
+        if author:
+            queryset = queryset.filter(author=author)
+
+        if self.request.user.is_anonymous:
+            return queryset
+
+        is_in_cart = self.request.query_params.get(UrlQueries.SHOP_CART)
+        if is_in_cart in Tuples.SYMBOL_TRUE_SEARCH.value:
+            queryset = queryset.filter(cart__user=self.request.user)
+        if is_in_cart in Tuples.SYMBOL_FALSE_SEARCH.value:
+            queryset = queryset.exclude(cart__user=self.request.user)
+
+        is_in_favourite = self.request.query_params.get(UrlQueries.SHOP_CART)
+        if is_in_favourite in Tuples.SYMBOL_TRUE_SEARCH.value:
+            queryset = queryset.filter(
+                favorites_recipes__user=self.request.user
+            )
+        if is_in_favourite in Tuples.SYMBOL_FALSE_SEARCH.value:
+            queryset = queryset.exclude(
+                favorites_recipes__user=self.request.user
+            )
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -44,12 +79,34 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [AllowAny, ]
+    filter_backends = [DjangoFilterBackend, ]
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerialier
-    permission_classes = [AllowAny, ]
+    permission_classes = [AdminOrReadOnly, ]
+
+    def get_queryset(self):
+        name: str = self.request.query_params.get(UrlQueries.SEARCH_ING_NAME)
+        queryset = self.queryset
+
+        if name:
+            if name == '%':
+                name = unquote(name)
+            else:
+                name = name.translate(incorrect_layout)
+
+            name = name.lower()
+            start_queryset = list(queryset.filter(name__istartswith=name))
+            ingredient_set = set(start_queryset)
+            cont_queryset = queryset.filter(name__icontains=name)
+            start_queryset.extend(
+                [ing for ing in cont_queryset if ing not in ingredient_set]
+            )
+            queryset = start_queryset
+
+        return queryset
 
 
 class ShhoopingViewSet(viewsets.ModelViewSet):

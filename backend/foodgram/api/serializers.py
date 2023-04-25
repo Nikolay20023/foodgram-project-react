@@ -106,8 +106,8 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    tag = TagSerializer(many=True)
-    ingredient = serializers.SerializerMethodField()
+    tags = TagSerializer(many=True)
+    ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shooping_cart = serializers.SerializerMethodField()
     author = serializers.SlugRelatedField(
@@ -121,9 +121,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'author',
-            'tag',
+            'tags',
             'text',
-            'ingredient',
+            'ingredients',
             'cooking_time',
             'image',
             'is_favorited',
@@ -134,11 +134,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shooping_cart'
         )
 
-    def get_ingredient(self, recipe: Recipe):
-        ingredient = recipe.ingredient.values(
+    def get_ingredients(self, recipe: Recipe):
+        ingredients = recipe.ingredients.values(
             'id', 'name', 'units', amount=F('ingredient_recipes__amount')
         )
-        return ingredient
+        return ingredients
 
     def get_is_favorited(self, recipe: Recipe):
         user = self.context.get('request').user
@@ -158,28 +158,28 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @atomic
     def create(self, validated_data):
-        tag = validated_data.pop('tag')
-        ingredient = validated_data.pop('ingredient')
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
-        recipe.tag.set(tag)
-        recipe.ingredient.set(ingredient)
+        recipe.tags.set(tags)
+        recipe.ingredients.set(ingredients)
         return recipe
 
     @atomic
     def update(self, validate_data: dict, recipe: Recipe):
-        tag = validate_data.pop('tag')
-        ingredient = validate_data.pop('ingredient')
+        tags = validate_data.pop('tags')
+        ingredients = validate_data.pop('ingredients')
         for key, value in validate_data.items():
             if hasattr(recipe, key):
                 setattr(recipe, key, value)
 
-        if tag:
-            recipe.tag.clear()
-            recipe.tag.set(tag)
+        if tags:
+            recipe.tags.clear()
+            recipe.tags.set(tags)
 
-        if ingredient:
-            recipe.ingredient.clear()
-            recipe.ingredient.set(ingredient)
+        if ingredients:
+            recipe.ingredients.clear()
+            recipe.ingredients.set(ingredients)
 
         recipe.save()
         return recipe
