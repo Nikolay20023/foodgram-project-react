@@ -16,21 +16,22 @@ from .serializers import (
 )
 from .permissions import IsOWnerOrReadOnly, AdminOrReadOnly
 from django.shortcuts import HttpResponse
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from recipes.models import Tag, ShoppingCart
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Sum
-from django_filters.rest_framework import DjangoFilterBackend
 from urllib.parse import unquote
 from core.enums import UrlQueries, Tuples
 from core.services import incorrect_layout
+from api.paginator import PageLimitPagination
 
 
 class RecipeViewset(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related('author')
     serializer_class = RecipeSerializer
+    pagination_class = PageLimitPagination
     permission_classes = [IsOWnerOrReadOnly, ]
 
     def get_queryset(self):
@@ -78,8 +79,7 @@ class RecipeViewset(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [AllowAny, ]
-    filter_backends = [DjangoFilterBackend, ]
+    permission_classes = (AdminOrReadOnly, )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

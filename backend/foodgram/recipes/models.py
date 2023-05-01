@@ -12,7 +12,7 @@ class Tag(models.Model):
 
     name = models.CharField(
         max_length=128,
-        verbose_name='Название',
+        verbose_name='Тэг',
         unique=True
     )
     slug = models.SlugField(
@@ -23,11 +23,13 @@ class Tag(models.Model):
     color = models.CharField(
         max_length=7,
         verbose_name='HEX-код',
-        default='#FF0000'
+        default='#FF0000',
+        unique=True,
+        db_index=False
     )
 
     def __str__(self) -> str:
-        return self.name
+        return f'{self.name} (цвет {self.color})'
 
 
 class Ingredient(models.Model):

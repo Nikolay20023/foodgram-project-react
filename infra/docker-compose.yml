@@ -23,7 +23,6 @@ services:
     command: >
       bash -c "python manage.py migrate &&
       python manage.py collectstatic --noinput &&
-      python manage.py loaddata a.json &&
       gunicorn --bind 0:8000 foodgram.wsgi"
     volumes:
       - static_value:/app/backend_static/
