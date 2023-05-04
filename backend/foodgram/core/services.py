@@ -6,19 +6,28 @@ if TYPE_CHECKING:
     from recipes.models import Ingredient
 
 
-def recipe_ingredient_set(
-        recipe: Recipe,
-        ingredients
+def recipe_ingredients_set(
+    recipe: Recipe,
+    ingredients
 ) -> None:
+    """Записывает ингредиенты вложенные в рецепт.
+    Создаёт объект AmountIngredient связывающий объекты Recipe и
+    Ingredient с указанием количества(`amount`) конкретного ингридиента.
+    Args:
+        recipe (Recipe):
+            Рецепт, в который нужно добавить игридиенты.
+        ingridients (list[dict]):
+            Список ингридентов и количества сих.
+    """
     objs = []
+
     for ingredient, amount in ingredients.values():
-        objs.append(
-            RecipeIngredient(
-                recipe=recipe,
-                ingredients=ingredient,
-                amount=amount
-            )
-        )
+        objs.append(RecipeIngredient(
+            recipe=recipe,
+            ingredient=ingredient,
+            amount=amount
+        ))
+
     RecipeIngredient.objects.bulk_create(objs)
 
 

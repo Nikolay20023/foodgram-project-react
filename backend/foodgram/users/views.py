@@ -10,11 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from users.models import User, Follow
 from rest_framework.decorators import action
 from djoser.views import UserViewSet
-from rest_framework.pagination import PageNumberPagination
+from api.paginator import PageLimitPagination
 
 
 class CustomUserViewSet(UserViewSet):
-    pagination_class = PageNumberPagination
+    pagination_class = PageLimitPagination
 
     @action(
         detail=True,

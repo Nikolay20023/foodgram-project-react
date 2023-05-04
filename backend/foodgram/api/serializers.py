@@ -5,13 +5,17 @@ from recipes.models import (
     Tag,
     Ingredient,
     ShoppingCart,
-    Favourite
+    Favourite,
+    RecipeIngredient
 )
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import F
 from django.db.transaction import atomic
 from drf_extra_fields.fields import Base64ImageField
-from core.services import recipe_ingredient_set
+from core.services import recipe_ingredients_set
+from collections import OrderedDict
+from django.core.exceptions import ValidationError
+from core.validators import tags_exist_validators, ingredients_validator
 
 
 User = get_user_model()
@@ -22,7 +26,7 @@ class IngredientSerialier(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
-        read_only_fields = ('id', 'name', 'units')
+        read_only_fields = '__all__',
 
 
 """class IngredientRecipeGetSerializer(serializers.ModelSerializer):
@@ -48,27 +52,30 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-"""class RecipeIngredientSerializer(serializers.ModelSerializer):
-    ingredient = serializers.StringRelatedField(many=True)
-    recipe = serializers.StringRelatedField(many=True)
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    recipe = serializers.PrimaryKeyRelatedField(read_only=True)
+    amount = serializers.IntegerField(write_only=True, min_value=1)
+    id = serializers.PrimaryKeyRelatedField(
+        source='ingredient',
+        queryset=Ingredient.objects.all()
+    )
 
     class Meta:
         model = RecipeIngredient
-        fields = ('__all__')"""
+        fields = ('recipe', 'amount', 'id')
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = '__all__'
-        read_only_fields = ('name', 'id', 'slug', 'color')
+        read_only_fields = '__all__',
 
-    """def validate(self, data: OrderedDict) -> OrderedDict:
+    def validate(self, data: OrderedDict) -> OrderedDict:
         for attr, value in data.items():
             data[attr] = value.sttrip(' #').upper()
 
         return data
-"""
 
 
 class ShoppingSerializer(serializers.ModelSerializer):
@@ -93,7 +100,7 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, read_only=True)
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shooping_cart = serializers.SerializerMethodField()
@@ -144,25 +151,38 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return user.user_cart.filter(recipe=recipe).exists()
 
-    @atomic
+    def validate(self, data):
+        tags_ids = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
+
+        if not tags_ids or not ingredients:
+            raise ValidationError(
+                f'Ошибка в {tags_ids}, {ingredients}'
+            )
+        tags_exist_validators(tags_ids, Tag)
+        ingredients = ingredients_validator(ingredients, Ingredient)
+
+        data.update(
+            {
+                'tags': tags_ids,
+                'ingredients': ingredients,
+                'author': self.context.get('request').user
+            }
+        )
+        return data
+
     def create(self, validated_data: dict):
-        tags: list[int] = validated_data.pop('tags')
+        tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        recipe_ingredient_set(recipe, ingredients)
+        recipe_ingredients_set(recipe, ingredients)
 
         return recipe
 
-    """def validate(self, data: OrderedDict) -> OrderedDict:
-        tags_id = list[int] = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
-        if not tags_id or not ingredients:
-            raise ValidationError('Недостаточно данных')"""
-
     @atomic
     def update(self, validate_data: dict, recipe: Recipe):
-        tags = validate_data.pop('tags')
+        tags = validate_data.pop("tags")
         ingredients = validate_data.pop('ingredients')
         for key, value in validate_data.items():
             if hasattr(recipe, key):

@@ -65,9 +65,6 @@ class RecipeViewset(viewsets.ModelViewSet):
             )
         return queryset
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
     def perform_destroy(self, instance):
         user = self.request.user
 
