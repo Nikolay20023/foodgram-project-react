@@ -1,9 +1,4 @@
-from typing import TYPE_CHECKING
 from recipes.models import Recipe, RecipeIngredient
-
-
-if TYPE_CHECKING:
-    from recipes.models import Ingredient
 
 
 def recipe_ingredients_set(

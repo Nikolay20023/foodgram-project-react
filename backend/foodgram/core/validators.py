@@ -1,15 +1,9 @@
-from re import compile
-from string import hexdigits
-from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
-
-if TYPE_CHECKING:
-    from recipes.models import Tag, Ingredient
 
 
 def ingredients_validator(
     ingredients,
-    Ingredient: 'Ingredient',
+    Ingredient,
 ) -> dict:
     """Проверяет список ингридиентов.
     Args:
@@ -48,7 +42,7 @@ def ingredients_validator(
     return valid_ings
 
 
-def tags_exist_validators(tags_ids, Tag: 'Tag'):
+def tags_exist_validators(tags_ids, Tag):
 
     exists_tags = Tag.objects.filter(id__in=tags_ids)
     if len(exists_tags) != len(tags_ids):
