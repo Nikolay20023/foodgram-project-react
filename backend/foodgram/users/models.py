@@ -4,6 +4,10 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     email = models.EmailField(max_length=128, unique=True, null=False)
+    is_active = models.BooleanField(
+        verbose_name='Активирован',
+        default=True
+    )
 
     REQUIRED_FIELDS = [
         'username',
@@ -17,30 +21,39 @@ class User(AbstractUser):
         ordering = ['id']
 
     def __str__(self):
-        return self.username
+        return f'{self.username}: {self.email}'
 
 
 class Follow(models.Model):
+    """
+    Attributes:
+        author(int):
+            Автор рецепта. Связь через ForeignKey.
+        user(int):
+            Подписчик Связь через ForeignKey.
+        date_added(datetime):
+            Дата создания подписки.
+    """
     class Meta:
         verbose_name = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'], name='unique_follow'
+                fields=['user', 'author'], name='unique_follow'
             )
         ]
     user = models.ForeignKey(
         User,
-        related_name='follower',
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь'
-    )
-    following = models.ForeignKey(
-        User,
-        related_name='following',
+        related_name='subscriptions',
         on_delete=models.CASCADE,
         verbose_name='Подписчик пользлователя'
+    )
+    author = models.ForeignKey(
+        User,
+        related_name='subscribers',
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь'
     )
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.user} follows {self.following}'
+        return f'{self.author} -> {self.user}'

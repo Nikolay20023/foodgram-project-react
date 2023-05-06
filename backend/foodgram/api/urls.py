@@ -4,7 +4,6 @@ from .views import (
     RecipeViewset,
     TagViewSet,
     IngredientViewSet,
-    FavotiteViewSet,
     ShhoopingViewSet
 )
 
@@ -31,16 +30,6 @@ urlpatterns = [
             }
         ),
         name='shopping_cart'
-    ),
-    path(
-        'recipes/<int:id>/favorite/',
-        FavotiteViewSet.as_view(
-            {
-                'post': 'create',
-                'delete': 'destroy'
-            }
-        ),
-        name='favourite'
     ),
     path(
         'recipes/download_shopping_cart/',

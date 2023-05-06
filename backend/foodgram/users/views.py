@@ -4,13 +4,18 @@ from django.shortcuts import get_object_or_404
 from users.serializers import (
     UserFollowSerializer,
     CurrentSertializer,
-    FollowListSerializer
+    FollowListSerializer,
+    UserSubscribeSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from users.models import User, Follow
 from rest_framework.decorators import action
 from djoser.views import UserViewSet
 from api.paginator import PageLimitPagination
+from api.mixins import AddDelViewMixin
+from core.enums import Tuples
+from django.db.models import Q
+from rest_framework.permissions import DjangoModelPermissions
 
 
 class CustomUserViewSet(UserViewSet):
@@ -84,3 +89,39 @@ class CustomUserViewSet(UserViewSet):
             context={'request': request}
         )
         return self.get_paginated_response(serilaizer.data)
+
+
+class CustomizeUserViewSet(UserViewSet, AddDelViewMixin):
+    pagination_class = PageLimitPagination
+    add_serializer = UserSubscribeSerializer
+    permission_classes = (DjangoModelPermissions, )
+
+    @action(
+        methods=Tuples.ACTION_METHODS,
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
+    def subscribe(self, request, id):
+        return self.add_del_obj(id, Follow, Q(author__id=id))
+
+    @action(
+        methods=Tuples.DEL_METHODS,
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
+    def unsubscribe(self, request, id):
+        return self.add_del_obj(id, Follow, Q(author__id=id))
+
+    @action(methods=('get',), detail=False)
+    def subscriptions(self, request):
+        if self.request.user.is_anonymous:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        pages = self.paginate_queryset(
+            User.objects.filter(subscribers__user=self.request.user)
+        )
+        serializer = UserSubscribeSerializer(
+            pages,
+            many=True,
+            context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)

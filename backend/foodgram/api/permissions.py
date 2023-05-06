@@ -53,21 +53,14 @@ class IsOWnerOrReadOnly(BanPermission):
 
 class AuthoStaffOrReadOnly(BanPermission):
 
-    def has_object_permission(
-            self,
-            view: APIRootView,
-            request: WSGIRequest,
-            obj: Model
-    ):
-        return (
-            request.method in SAFE_METHODS
-            or request.user.is_authenticated
-            or request.user.is_active
-            and (
-                request.user == obj.author
-                or request.user.is_staff
-            )
-        )
+    def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any request,
+        # so we'll always allow GET, HEAD or OPTIONS requests.
+        if request.method in SAFE_METHODS:
+            return True
+
+        # Write permissions are only allowed to the owner of the snippet.
+        return obj.user == request.user
 
 
 class AdminOrReadOnly(BanPermission):
@@ -82,4 +75,24 @@ class AdminOrReadOnly(BanPermission):
             or self.user.is_authenticated
             and self.user.is_active
             and self.user.is_staff
+        )
+
+
+class OwnerUserOrReadOnly(BanPermission):
+    """
+    Разрешение на создание и изменение только для админа и пользователя.
+    Остальным только чтение объекта.
+    """
+    def has_object_permission(
+        self,
+        request: WSGIRequest,
+        view: APIRootView,
+        obj: Model
+    ) -> bool:
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_authenticated
+            and request.user.is_active
+            and request.user == obj.author
+            or request.user.is_staff
         )

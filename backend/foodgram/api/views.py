@@ -14,7 +14,9 @@ from .serializers import (
     ShoppingSerializer,
     FavouriteSerializer,
 )
-from .permissions import IsOWnerOrReadOnly, AdminOrReadOnly
+from users.serializers import ShortRecipeSerializer
+from django.db.models import Q
+from .permissions import AdminOrReadOnly, AuthoStaffOrReadOnly
 from django.shortcuts import HttpResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
@@ -26,13 +28,16 @@ from urllib.parse import unquote
 from core.enums import UrlQueries, Tuples
 from core.services import incorrect_layout
 from api.paginator import PageLimitPagination
+from rest_framework.decorators import action
+from api.mixins import AddDelViewMixin
 
 
-class RecipeViewset(viewsets.ModelViewSet):
+class RecipeViewset(viewsets.ModelViewSet, AddDelViewMixin):
     queryset = Recipe.objects.select_related('author')
     serializer_class = RecipeSerializer
     pagination_class = PageLimitPagination
-    permission_classes = [IsOWnerOrReadOnly, ]
+    permission_classes = [AuthoStaffOrReadOnly, ]
+    add_serializer = ShortRecipeSerializer
 
     def get_queryset(self):
         queryset = self.queryset
@@ -40,7 +45,7 @@ class RecipeViewset(viewsets.ModelViewSet):
         if tags:
             queryset = queryset.filter(
                 tags__slug__in=tags
-            )
+            ).distinct()
         author: str = self.request.query_params.get(UrlQueries.AUTHOR.value)
         if author:
             queryset = queryset.filter(author=author)
@@ -51,19 +56,46 @@ class RecipeViewset(viewsets.ModelViewSet):
         is_in_cart = self.request.query_params.get(UrlQueries.SHOP_CART)
         if is_in_cart in Tuples.SYMBOL_TRUE_SEARCH.value:
             queryset = queryset.filter(cart__user=self.request.user)
-        if is_in_cart in Tuples.SYMBOL_FALSE_SEARCH.value:
+        elif is_in_cart in Tuples.SYMBOL_FALSE_SEARCH.value:
             queryset = queryset.exclude(cart__user=self.request.user)
 
-        is_in_favourite = self.request.query_params.get(UrlQueries.SHOP_CART)
-        if is_in_favourite in Tuples.SYMBOL_TRUE_SEARCH.value:
+        is_favourite = self.request.query_params.get(UrlQueries.FAVORITE)
+        if is_favourite in Tuples.SYMBOL_TRUE_SEARCH.value:
             queryset = queryset.filter(
                 favorites_recipes__user=self.request.user
             )
-        if is_in_favourite in Tuples.SYMBOL_FALSE_SEARCH.value:
+        if is_favourite in Tuples.SYMBOL_FALSE_SEARCH.value:
             queryset = queryset.exclude(
                 favorites_recipes__user=self.request.user
             )
         return queryset
+
+    @action(
+        methods=Tuples.ACTION_METHODS,
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
+    def favorite(self, request, pk) -> Response:
+        return self.add_del_obj(
+            obj_id=pk,
+            model=Favourite,
+            query=Q(recipe__id=pk)
+        )
+
+    @action(
+        methods=Tuples.ACTION_METHODS,
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
+    def shopping_cart(self, request, pk):
+        return self.add_del_obj(
+            obj_id=pk,
+            model=ShoppingCart,
+            query=Q(recipe__id=pk)
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(author=self.request.user)
 
     def perform_destroy(self, instance):
         user = self.request.user

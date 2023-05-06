@@ -14,6 +14,6 @@ class Tuples(tuple, Enum):
 class UrlQueries(str, Enum):
     SEARCH_ING_NAME = 'name'
     FAVORITE = 'is_favorited'
-    SHOP_CART = 'is_in_shooping_cart'
+    SHOP_CART = 'is_in_shopping_cart'
     AUTHOR = 'author'
     TAGS = 'tags'

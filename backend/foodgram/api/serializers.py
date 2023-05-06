@@ -8,6 +8,7 @@ from recipes.models import (
     Favourite,
     RecipeIngredient
 )
+from users.serializers import CustomUserSerializator
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import F
 from django.db.transaction import atomic
@@ -27,29 +28,6 @@ class IngredientSerialier(serializers.ModelSerializer):
         model = Ingredient
         fields = '__all__'
         read_only_fields = '__all__',
-
-
-"""class IngredientRecipeGetSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='ingredient.id')
-    name = serializers.ReadOnlyField(source='ingredient.name')
-    units = serializers.ReadOnlyField(source='ingredient.units')
-
-    class Meta:
-        model = RecipeIngredient
-        fields = ('id', 'name', 'units', 'amount')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=RecipeIngredient.objects.all(),
-                fields=['ingredient', 'recipe']
-            )
-        ]"""
-
-
-class ShortRecipeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -103,11 +81,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
-    is_in_shooping_cart = serializers.SerializerMethodField()
-    author = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True
-    )
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    author = CustomUserSerializator(read_only=True)
     image = Base64ImageField()
 
     class Meta:
@@ -122,11 +97,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time',
             'image',
             'is_favorited',
-            'is_in_shooping_cart'
+            'is_in_shopping_cart'
         )
         read_only_fields = (
             'is_favorited',
-            'is_in_shooping_cart'
+            'is_in_shopping_cart'
         )
 
     def get_ingredients(self, recipe: Recipe):
@@ -143,7 +118,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return user.favorites.filter(recipe=recipe).exists()
 
-    def get_is_in_shooping_cart(self, recipe: Recipe):
+    def get_is_in_shopping_cart(self, recipe: Recipe):
         user = self.context.get('request').user
 
         if user.is_anonymous:
@@ -181,7 +156,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     @atomic
-    def update(self, validate_data: dict, recipe: Recipe):
+    def update(self, recipe: dict, validate_data: Recipe):
+
         tags = validate_data.pop("tags")
         ingredients = validate_data.pop('ingredients')
         for key, value in validate_data.items():
@@ -194,7 +170,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if ingredients:
             recipe.ingredients.clear()
-            recipe.ingredients.set(ingredients)
+            recipe_ingredients_set(recipe, ingredients)
 
         recipe.save()
         return recipe
